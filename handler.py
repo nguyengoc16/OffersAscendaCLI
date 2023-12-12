@@ -10,12 +10,9 @@ class OfferFilter:
         'Activity': 4,
     }
 
-
-    
-
+    DAYS_TO_CHECKIN = 5
 
     def __init__(self, path: str):
-        # path = '../input.json'
         
         # Open the file and load the JSON data
         with open(path, 'r') as file:
@@ -23,11 +20,14 @@ class OfferFilter:
         self.offer_data = data
 
         
-
-
     def load_checkin_date(self):
-        input_date = input("Please enter your check-in date (follow YYYY-MM-DD): ")
-        self.checkin_date = datetime.strptime(input_date, '%Y-%m-%d')
+        while True:
+            try:
+                input_date = input("Please enter your check-in date (follow YYYY-MM-DD): ")
+                self.checkin_date = datetime.strptime(input_date, '%Y-%m-%d')
+                break
+            except ValueError:
+                print("Invalid date format. Please try again.")
         
 
     def filter_by_date(self):
@@ -38,18 +38,20 @@ class OfferFilter:
             valid_date = datetime.strptime(offer.get('valid_to', ''), '%Y-%m-%d')
 
             # Check if the offer is valid
-            if valid_date >= self.checkin_date + timedelta(days=5):
+            if self.is_valid_date(valid_date):
                 valid_offers.append(offer)
         self.offer_data['offers'] = valid_offers
+
+    def is_valid_date(self, valid_date):
+        return valid_date >= self.checkin_date + timedelta(days=self.DAYS_TO_CHECKIN)
 
 
     def filter_by_categories(self):
         valid_offers= []
-        valid_cat = list(self.VALID_CATEGORIES.values())
 
         for offer in self.offer_data.get('offers', []):
             #check if the category is valid
-            if offer['category'] in valid_cat: 
+            if offer['category'] in self.VALID_CATEGORIES.values(): 
                 valid_offers.append(offer)
             self.offer_data['offers'] = valid_offers
 
@@ -64,6 +66,7 @@ class OfferFilter:
     def filter_by_shortest_distance_each_category(self):
         #group same category
         grouped_category = {}
+        
         for offer in self.offer_data.get('offers', []):
             if offer['category'] not in grouped_category:
                 grouped_category[offer['category']] = [offer]
